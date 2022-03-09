@@ -194,30 +194,26 @@ namespace MachinaTrader.Controllers
         {
             var result = new JArray();
 
-            var symbolArray = new JArray();
+            var symbols = new List<string>();
 
             IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-            var exchangeCoins = api.GetSymbolsMetadataAsync().Result;
+            IEnumerable<ExchangeMarket> exchangeCoins = api.GetSymbolsMetadataAsync().Result;
 
             if (!String.IsNullOrEmpty(baseCurrency))
             {
                 exchangeCoins = exchangeCoins.Where(e => e.BaseCurrency.ToLowerInvariant() == baseCurrency.ToLowerInvariant());
             }
 
-            foreach (var coin in exchangeCoins)
+            foreach (var coin in exchangeCoins.OrderBy(x => x.MarketName))
             {
-                symbolArray.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                symbols.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
             }
 
             var baseCurrencyArray = new JArray();
-            var exchangeBaseCurrencies = api.GetSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct();
-            foreach (var currency in exchangeBaseCurrencies)
-            {
-                baseCurrencyArray.Add(currency);
-            }
+            IEnumerable<string> exchangeBaseCurrencies = api.GetSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
 
-            result.Add(symbolArray);
-            result.Add(baseCurrencyArray);
+            result.Add(JArray.FromObject(symbols.OrderBy(x => x)));
+            result.Add(JArray.FromObject(exchangeBaseCurrencies));
 
             return new JsonResult(result);
         }
