@@ -35,57 +35,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Hosting;
 
 namespace MachinaTrader
 {
-    public static class ConfigurationExtensions
-    {
-        private static readonly MethodInfo MapHubMethod = typeof(HubRouteBuilder).GetMethod("MapHub", new[] { typeof(PathString) });
-
-        public static HubRouteBuilder MapSignalrRoutes(this HubRouteBuilder hubRouteBuilder)
-        {
-            IEnumerable<Assembly> assembliesPlugins = Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory, "MachinaTrader.Plugin.*.dll", SearchOption.TopDirectoryOnly)
-                .Select(Assembly.LoadFrom);
-
-            foreach (var assembly in assembliesPlugins)
-            {
-                IEnumerable<Type> pluginHubTypes = assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Hub)) && !t.IsAbstract);
-
-                foreach (var pluginHubType in pluginHubTypes)
-                {
-                    //Console.WriteLine("Assembly Name: " + assembly.GetName().Name);
-                    //Console.WriteLine("HubName: " + pluginHubType);
-                    string hubRoute = pluginHubType.ToString().Replace(assembly.GetName().Name, "").Replace(".Hubs.", "").Replace("MachinaTrader", "");
-                    Global.Logger.Information(assembly.GetName().Name + " - Hub Route " + hubRoute);
-                    MapHubMethod.MakeGenericMethod(pluginHubType).Invoke(hubRouteBuilder, new object[] { new PathString("/signalr/" + hubRoute) });
-                }
-            }
-            //Add Global Hubs -> No plugin
-            hubRouteBuilder.MapHub<HubMainIndex>("/signalr/HubMainIndex");
-            hubRouteBuilder.MapHub<HubTraders>("/signalr/HubTraders");
-            hubRouteBuilder.MapHub<HubStatistics>("/signalr/HubStatistics");
-            hubRouteBuilder.MapHub<HubBacktest>("/signalr/HubBacktest");
-            hubRouteBuilder.MapHub<HubExchangeAccounts>("/signalr/HubExchangeAccounts");
-            //Hub Log is located in Globals because we need to wire up with serilog
-            hubRouteBuilder.MapHub<HubLogs>("/signalr/HubLogs");
-            return hubRouteBuilder;
-        }
-    }
-
-
     public class Startup
     {
         public static IServiceScope ServiceScope { get; private set; }
-        public IHostingEnvironment HostingEnvironment { get; set; }
+        public IWebHostEnvironment HostingEnvironment { get; set; }
         public static IConfiguration Configuration { get; set; }
         public IContainer ApplicationContainer { get; private set; }
         public static readonly SymmetricSecurityKey SecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Global.Configuration.SystemOptions.RsaPrivateKey));
         public static readonly JwtSecurityTokenHandler JwtTokenHandler = new JwtSecurityTokenHandler();
 
-        public Startup(IConfiguration configuration, IHostingEnvironment hostingEnvironment)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
-            HostingEnvironment = hostingEnvironment;
+            HostingEnvironment = env;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -108,10 +74,9 @@ namespace MachinaTrader
 
             //services.AddLazyCache();
 
-
             // Add LiteDB Dependency
             string authDbPath = Global.DataPath + "/MachinaTraderUsers.db";
-            services.AddSingleton<ILiteDbContext, LiteDbContext>(serviceProvider => new LiteDbContext(HostingEnvironment, authDbPath));
+            services.AddSingleton<ILiteDbContext, LiteDbContext>(serviceProvider => new LiteDbContext(authDbPath));
 
             services.Configure<GzipCompressionProviderOptions>(options => options.Level = System.IO.Compression.CompressionLevel.Optimal);
             services.AddResponseCompression();
@@ -195,7 +160,18 @@ namespace MachinaTrader
 
             services.AddLogging(b => { b.AddSerilog(Globals.Global.Logger); });
 
-            var mvcBuilder = services.AddMvc().AddRazorPagesOptions(options =>
+            //var mvcBuilder = services.AddMvc().AddRazorPagesOptions(options =>
+            //{
+            //    options.Conventions.AuthorizePage("/");
+            //    options.Conventions.AuthorizeFolder("/");
+            //    //options.Conventions.AllowAnonymousToPage("/Account");
+            //    //options.Conventions.AllowAnonymousToFolder("/Account");
+            //});
+
+            services.AddRouting();
+            services.AddControllersWithViews();
+
+            var mvcBuilder = services.AddRazorPages(options =>
             {
                 options.Conventions.AuthorizePage("/");
                 options.Conventions.AuthorizeFolder("/");
@@ -230,7 +206,7 @@ namespace MachinaTrader
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment hostingEnvironment, IAppCache cache, ILiteDbContext liteDbContext, IDatabaseInitializer databaseInitializer)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment hostingEnvironment, IAppCache cache, ILiteDbContext liteDbContext, IDatabaseInitializer databaseInitializer)
         {
             Global.ServiceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope();
             Global.ApplicationBuilder = app;
@@ -243,12 +219,15 @@ namespace MachinaTrader
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseRouting();
+
             app.UseAuthentication();
+            app.UseAuthorization();
 
             // Init Plugins
             foreach (JProperty plugin in Global.CoreRuntime["Plugins"])
             {
-                if ((bool)Global.CoreRuntime["Plugins"][plugin.Name]["Enabled"] == false)
+                if (!(bool)Global.CoreRuntime["Plugins"][plugin.Name]["Enabled"])
                 {
                     continue;
                 }
@@ -274,9 +253,23 @@ namespace MachinaTrader
 
             app.UseWebSockets();
 
-            app.UseSignalR(route => route.MapSignalrRoutes());
+            app.UseEndpoints(endpoints =>
+            {
+                //Add Global Hubs -> No plugin
 
-            app.UseMvc();
+                endpoints.MapHub<HubMainIndex>("/signalr/HubMainIndex");
+                endpoints.MapHub<HubTraders>("/signalr/HubTraders");
+                endpoints.MapHub<HubStatistics>("/signalr/HubStatistics");
+                endpoints.MapHub<HubBacktest>("/signalr/HubBacktest");
+                endpoints.MapHub<HubExchangeAccounts>("/signalr/HubExchangeAccounts");
+                //Hub Log is located in Globals because we need to wire up with serilog
+                endpoints.MapHub<HubLogs>("/signalr/HubLogs");
+
+                endpoints.MapRazorPages();
+                endpoints.MapControllers();
+            });
+
+            //app.UseMvc();
 
             // Init Database
             databaseInitializer.Initialize();
@@ -302,7 +295,7 @@ namespace MachinaTrader
 
     public class AppCacheModule : Autofac.Module
     {
-       protected override void Load(ContainerBuilder builder)
+        protected override void Load(ContainerBuilder builder)
         {
             builder.Register(c => new CachingService(new MemoryCacheProvider(new MemoryCache(new MemoryCacheOptions()))))
                .As<IAppCache>()
