@@ -724,8 +724,8 @@
             updateSymbols: function () {
                 var self = this;
                 $.get('/api/backtester/exchangePairs?exchange=' + $("#exchangeSelect").val(), function (data) {
-                    self.exchangeCoinsData = data[0];
-                    self.exchangeBaseCurrenciesData = data[1];
+                    self.exchangeCoinsData = data.symbols;
+                    self.exchangeBaseCurrenciesData = data.exchangeBaseCurrencies;
                     self.$nextTick(function () {
                         //pagefunction();
                         //self.updateCandleAge();

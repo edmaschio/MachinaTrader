@@ -173,7 +173,6 @@ namespace MachinaTrader.Controllers
         [Route("backtesterStrategy")]
         public ActionResult BacktesterStrategy()
         {
-
             JObject strategies = new JObject();
             foreach (var strategy in BacktestFunctions.GetTradingStrategies())
             {
@@ -192,8 +191,6 @@ namespace MachinaTrader.Controllers
         [Route("exchangePairs")]
         public ActionResult ExchangePairs(string exchange, string baseCurrency)
         {
-            var result = new JArray();
-
             var symbols = new List<string>();
 
             IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
@@ -209,13 +206,13 @@ namespace MachinaTrader.Controllers
                 symbols.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
             }
 
-            var baseCurrencyArray = new JArray();
             IEnumerable<string> exchangeBaseCurrencies = api.GetSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
 
-            result.Add(JArray.FromObject(symbols.OrderBy(x => x)));
-            result.Add(JArray.FromObject(exchangeBaseCurrencies));
-
-            return new JsonResult(result);
+            return Ok(new
+            {
+                Symbols = symbols.OrderBy(x => x),
+                ExchangeBaseCurrencies = exchangeBaseCurrencies,
+            });
         }
 
         [HttpGet]
