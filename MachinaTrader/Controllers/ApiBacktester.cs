@@ -201,7 +201,7 @@ namespace MachinaTrader.Controllers
 
             if (!String.IsNullOrEmpty(baseCurrency))
             {
-                exchangeCoins = exchangeCoins.Where(e => e.BaseCurrency.ToLowerInvariant() == baseCurrency.ToLowerInvariant());
+                exchangeCoins = exchangeCoins.Where(e => string.Equals(e.BaseCurrency, baseCurrency, StringComparison.InvariantCultureIgnoreCase));
             }
 
             foreach (var coin in exchangeCoins.OrderBy(x => x.MarketName))
