@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using MachinaTrader.Globals;
 using MachinaTrader.Globals.Structure.Enums;
@@ -52,7 +51,7 @@ namespace MachinaTrader.Exchanges
 
     public class BaseExchange : IExchangeApi
     {
-        private readonly ExchangeAPI _api;
+        private readonly IExchangeAPI _api;
         private readonly Exchange _exchange;
         private List<ExchangeMarket> _exchangeInfo;
 
@@ -63,34 +62,31 @@ namespace MachinaTrader.Exchanges
             switch (_exchange)
             {
                 case Exchange.Binance:
-                    _api = new ExchangeSharp.ExchangeBinanceAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeBinanceAPI>();
                     break;
                 case Exchange.Bitfinex:
-                    _api = new ExchangeSharp.ExchangeBitfinexAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeBitfinexAPI>();
                     break;
                 case Exchange.Bittrex:
-                    _api = new ExchangeSharp.ExchangeBittrexAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeBittrexAPI>();
                     break;
                 case Exchange.Poloniex:
-                    _api = new ExchangeSharp.ExchangePoloniexAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangePoloniexAPI>();
                     break;
                 case Exchange.Huobi:
-                    _api = new ExchangeSharp.ExchangeHuobiAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeHuobiAPI>();
                     break;
                 case Exchange.HitBtc:
-                    _api = new ExchangeSharp.ExchangeHitbtcAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeHitBTCAPI>();
                     break;
                 case Exchange.Coinbase:
-                    _api = new ExchangeSharp.ExchangeCoinbaseAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeCoinbaseAPI>();
                     break;
                 case Exchange.Okex:
-                    _api = new ExchangeSharp.ExchangeOkexAPI();
-                    break;
-                case Exchange.Cryptopia:
-                    _api = new ExchangeSharp.ExchangeCryptopiaAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeOKExAPI>();
                     break;
                 case Exchange.Kucoin:
-                    _api = new ExchangeSharp.ExchangeKucoinAPI();
+                    _api = ExchangeAPI.GetExchangeAPI<ExchangeKuCoinAPI>();
                     break;
             }
 
@@ -103,6 +99,10 @@ namespace MachinaTrader.Exchanges
             _api = exchangeApi;
         }
 
+        public BaseExchange()
+        {
+        }
+
         #region default implementations
 
         public async Task<string> Buy(string market, decimal quantity, decimal rate)
@@ -113,7 +113,7 @@ namespace MachinaTrader.Exchanges
                 IsBuy = true,
                 OrderType = ExchangeSharp.OrderType.Limit,
                 Price = rate,
-                Symbol = market
+                MarketSymbol = market
             };
 
             try
@@ -196,12 +196,12 @@ namespace MachinaTrader.Exchanges
 
                     result.Add(new MarketSummary()
                     {
-                        CurrencyPair = new CurrencyPair() { BaseCurrency = info.MarketCurrency, QuoteCurrency = info.BaseCurrency },
+                        CurrencyPair = new CurrencyPair() { BaseCurrency = info.BaseCurrency, QuoteCurrency = info.BaseCurrency },
                         MarketName = summary.Key,
                         Ask = summary.Value.Ask,
                         Bid = summary.Value.Bid,
                         Last = summary.Value.Last,
-                        Volume = summary.Value.Volume.ConvertedVolume,
+                        Volume = summary.Value.Volume.BaseCurrencyVolume,
                     });
                 }
             }
@@ -222,7 +222,7 @@ namespace MachinaTrader.Exchanges
                     ExecutedQuantity = x.AmountFilled,
                     OrderId = x.OrderId,
                     Side = x.IsBuy ? OrderSide.Buy : OrderSide.Sell,
-                    Market = x.Symbol,
+                    Market = x.MarketSymbol,
                     Price = x.Price,
                     OrderDate = x.OrderDate,
                     Status = x.Result.ToOrderStatus()
@@ -254,7 +254,7 @@ namespace MachinaTrader.Exchanges
                     ExecutedQuantity = order.AmountFilled,
                     OrderId = order.OrderId,
                     Price = order.Price,
-                    Market = order.Symbol,
+                    Market = order.MarketSymbol,
                     Side = order.IsBuy ? OrderSide.Buy : OrderSide.Sell,
                     OrderDate = order.OrderDate,
                     Status = order.Result.ToOrderStatus()
@@ -286,7 +286,7 @@ namespace MachinaTrader.Exchanges
                     Ask = ticker.Ask,
                     Bid = ticker.Bid,
                     Last = ticker.Last,
-                    Volume = ticker.Volume.ConvertedVolume
+                    Volume = ticker.Volume.BaseCurrencyVolume
                 };
 
             return null;
@@ -331,7 +331,7 @@ namespace MachinaTrader.Exchanges
                         candle.Low = item.LowPrice;
                         candle.Open = item.OpenPrice;
                         candle.Timestamp = item.Timestamp;
-                        candle.Volume = (decimal)item.ConvertedVolume;
+                        candle.Volume = (decimal)item.BaseCurrencyVolume;
 
                         candles.Add(candle);
                     }
@@ -380,7 +380,7 @@ namespace MachinaTrader.Exchanges
                     Low = x.LowPrice,
                     Open = x.OpenPrice,
                     Timestamp = x.Timestamp,
-                    Volume = (decimal)x.ConvertedVolume
+                    Volume = (decimal)x.BaseCurrencyVolume
                 }).ToList();
 
                 candles = await candles.FillCandleGaps(period);
@@ -445,7 +445,7 @@ namespace MachinaTrader.Exchanges
                     Low = x.LowPrice,
                     Open = x.OpenPrice,
                     Timestamp = x.Timestamp,
-                    Volume = (decimal)x.ConvertedVolume
+                    Volume = (decimal)x.BaseCurrencyVolume
                 }).ToList();
 
                 totalCandles = await totalCandles.FillCandleGaps(period);
@@ -464,7 +464,7 @@ namespace MachinaTrader.Exchanges
                 IsBuy = false,
                 OrderType = ExchangeSharp.OrderType.Limit,
                 Price = rate,
-                Symbol = market
+                MarketSymbol = market
             };
 
             try
@@ -484,28 +484,28 @@ namespace MachinaTrader.Exchanges
         {
             if (_exchangeInfo == null)
             {
-                var result = (await _api.GetSymbolsMetadataAsync()).ToList();
+                var result = (await _api.GetMarketSymbolsMetadataAsync()).ToList();
                 _exchangeInfo = result;
             }
 
-            var eSymbol = _api.GlobalSymbolToExchangeSymbol(symbol);
+            var eSymbol = await _api.GlobalMarketSymbolToExchangeMarketSymbolAsync(symbol);
 
-            return _exchangeInfo.FirstOrDefault(x => x.MarketName == eSymbol);
+            return _exchangeInfo.Find(x => x.MarketSymbol == eSymbol);
         }
 
         public async Task<string> GlobalSymbolToExchangeSymbol(string symbol)
         {
-            return _api.GlobalSymbolToExchangeSymbol(symbol);
+            return await _api.GlobalMarketSymbolToExchangeMarketSymbolAsync(symbol);
         }
 
         public async Task<string> ExchangeCurrencyToGlobalCurrency(string symbol)
         {
-            return _api.ExchangeSymbolToGlobalSymbol(symbol);
+            return await _api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(symbol);
         }
 
         public async Task<ExchangeAPI> GetFullApi()
         {
-            return _api;
+            return _api as ExchangeAPI;
         }
 
         #endregion
@@ -520,17 +520,17 @@ namespace MachinaTrader.Exchanges
             var symbols = await Global.AppCache.GetAsync<IEnumerable<ExchangeMarket>>(symbolsCacheKey);
             if (symbols == null || !symbols.Any())
             {
-                symbols = await _api.GetSymbolsMetadataAsync();
+                symbols = await _api.GetMarketSymbolsMetadataAsync();
                 Global.AppCache.Add(symbolsCacheKey, symbols, new MemoryCacheEntryOptions
                 {
                     AbsoluteExpiration = DateTimeOffset.Now.AddHours(1),
                 });
             }
 
-            if (symbols.Count() == 0)
+            if (!symbols.Any())
                 throw new Exception();
 
-            var list = await _api.GetSymbolsAsync();
+            var list = await _api.GetMarketSymbolsAsync();
             var filteredList = list.Where(x => x.ToLower().EndsWith(quoteCurrency.ToLower(), StringComparison.Ordinal));
 
             //var tasks = new Task[summaries.Count()];
@@ -573,18 +573,18 @@ namespace MachinaTrader.Exchanges
 
                 if (ticker != null)
                 {
-                    var symbol = symbols.FirstOrDefault(x => x.MarketName == item);
+                    var symbol = symbols.FirstOrDefault(x => x.MarketSymbol == item);
 
                     if (symbol != null)
                     {
                         summaries.Add(new MarketSummary()
                         {
-                            CurrencyPair = new CurrencyPair() { BaseCurrency = symbol.MarketCurrency, QuoteCurrency = symbol.BaseCurrency },
+                            CurrencyPair = new CurrencyPair() { BaseCurrency = symbol.MarketSymbol, QuoteCurrency = symbol.BaseCurrency },
                             MarketName = item,
                             Ask = ticker.Ask,
                             Bid = ticker.Bid,
                             Last = ticker.Last,
-                            Volume = ticker.Volume.ConvertedVolume,
+                            Volume = ticker.Volume.BaseCurrencyVolume,
                         });
                     }
                 }

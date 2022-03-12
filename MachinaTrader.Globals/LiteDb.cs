@@ -29,7 +29,7 @@ namespace MachinaTrader.Globals
                 return _instance["databaseName"];
             }
 
-            public LiteCollection<T> GetTable<T>(string collectionName = null) where T : new()
+            public ILiteCollection<T> GetTable<T>(string collectionName = null) where T : new()
             {
                 if (collectionName == null)
                 {

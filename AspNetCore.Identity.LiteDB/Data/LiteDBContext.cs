@@ -8,7 +8,7 @@ namespace AspNetCore.Identity.LiteDB.Data
 
         public LiteDbContext(string fileName)
         {
-            var conn = new ConnectionString { Filename = fileName, Mode = FileMode.Exclusive };
+            var conn = new ConnectionString { Filename = fileName, Upgrade = true };
             LiteDatabase = new LiteDatabase(conn);
         }
     }

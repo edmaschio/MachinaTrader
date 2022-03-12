@@ -53,24 +53,24 @@ namespace MachinaTrader.Backtester
             Global.Logger.Information($"Starting CacheAllData");
             var watch1 = System.Diagnostics.Stopwatch.StartNew();
 
-            var exchangeCoins = api.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == Global.Configuration.TradeOptions.QuoteCurrency);
+            var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == Global.Configuration.TradeOptions.QuoteCurrency);
 
             // If there are items on the only trade list remove the rest
             if (Global.Configuration.TradeOptions.OnlyTradeList.Count > 0)
-                exchangeCoins = exchangeCoins.Where(m => Global.Configuration.TradeOptions.OnlyTradeList.Any(c => c.Contains(m.MarketName))).ToList();
+                exchangeCoins = exchangeCoins.Where(m => Global.Configuration.TradeOptions.OnlyTradeList.Any(c => c.Contains(m.MarketSymbol))).ToList();
 
             var currentExchangeOption = Global.Configuration.ExchangeOptions.FirstOrDefault();
 
-            IExchangeAPI realExchange = ExchangeAPI.GetExchangeAPI(api.Name);
+            IExchangeAPI realExchange = await ExchangeAPI.GetExchangeAPIAsync(api.Name);
 
             var returns = new Tuple<DateTime, DateTime>(DateTime.MinValue,DateTime.MinValue);
 
             foreach (var coin in exchangeCoins)
             {
-                var symbol = coin.MarketName;
+                var symbol = coin.MarketSymbol;
 
                 if (realExchange is ExchangeBinanceAPI)
-                    symbol = api.ExchangeSymbolToGlobalSymbol(symbol);
+                    symbol = await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(symbol);
 
                 var backtestOptions = new BacktestOptions
                 {

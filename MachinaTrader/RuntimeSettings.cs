@@ -21,6 +21,7 @@ using MachinaTrader.Data.MongoDB;
 using MachinaTrader.Exchanges;
 using MachinaTrader.Notifications;
 using MachinaTrader.Backtester;
+using System.Threading.Tasks;
 
 namespace MachinaTrader
 {
@@ -121,17 +122,18 @@ namespace MachinaTrader
             Global.Logger.Information($"Sell Cron will run at: {sellTimerJobTrigger.GetNextFireTimeUtc() ?? DateTime.MinValue:r}");
         }
 
-        public static void LoadSettings()
+        public static async Task LoadSettings()
         {
             var exchangeOption = Global.Configuration.ExchangeOptions.FirstOrDefault();
             switch (exchangeOption.Exchange)
             {
-                case Exchange.CoinbaseSimulation:
-                    exchangeOption.Exchange = Exchange.Coinbase;
-                    Global.ExchangeApi = new BaseExchange(exchangeOption, new ExchangeSimulationApi(new ExchangeCoinbaseAPI()));
-                    Global.DataStore = new MemoryDataStore();
-                    exchangeOption.IsSimulation = true;
-                    break;
+                // TO-DO: fix coinbase
+                //case Exchange.CoinbaseSimulation:
+                //    exchangeOption.Exchange = Exchange.Coinbase;
+                //    Global.ExchangeApi = new BaseExchange(exchangeOption, new ExchangeSimulationApi(new ExchangeCoinbaseAPI()));
+                //    Global.DataStore = new MemoryDataStore();
+                //    exchangeOption.IsSimulation = true;
+                //    break;
                 case Exchange.BinanceSimulation:
                     exchangeOption.Exchange = Exchange.Binance;
                     Global.ExchangeApi = new BaseExchange(exchangeOption, new ExchangeSimulationApi(new ExchangeBinanceAPI()));
@@ -155,11 +157,11 @@ namespace MachinaTrader
 
             foreach (var currency in Runtime.GlobalCurrencys)
             {
-                Runtime.ExchangeCurrencys.Add(fullApi.GlobalSymbolToExchangeSymbol(currency));
+                Runtime.ExchangeCurrencys.Add(await fullApi.GlobalMarketSymbolToExchangeMarketSymbolAsync(currency));
             }
 
             if (!exchangeOption.IsSimulation)
-                fullApi.GetTickersWebSocket(OnWebsocketTickersUpdated);
+                await fullApi.GetTickersWebSocketAsync(OnWebsocketTickersUpdated);
 
             // Telegram Notifications
             Runtime.GlobalTelegramNotificationOptions = Global.Configuration.TelegramOptions;

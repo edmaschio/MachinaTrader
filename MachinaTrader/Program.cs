@@ -1,14 +1,16 @@
 using MachinaTrader.Globals;
+using System.Threading.Tasks;
 
 namespace MachinaTrader
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             Global.InitGlobals();
-            RuntimeSettings.LoadSettings();
+            await RuntimeSettings.LoadSettings();
             WebApplication.ProcessInit();
+            return 0;
         }
     }
 

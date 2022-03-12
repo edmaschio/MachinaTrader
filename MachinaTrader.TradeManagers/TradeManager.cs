@@ -692,9 +692,9 @@ namespace MachinaTrader.TradeManagers
                 {
                     trade.OpenOrderId = null;
                     trade.IsBuying = false;
-                    trade.StakeAmount = exchangeOrder.OriginalQuantity * exchangeOrder.Price;
+                    trade.StakeAmount = exchangeOrder.OriginalQuantity * exchangeOrder.Price.Value;
                     trade.Quantity = exchangeOrder.OriginalQuantity;
-                    trade.OpenRate = exchangeOrder.Price;
+                    trade.OpenRate = exchangeOrder.Price.Value;
                     trade.OpenDate = Global.Configuration.ExchangeOptions.FirstOrDefault().IsSimulation ? trade.OpenDate : exchangeOrder.OrderDate;
 
                     await SendNotification($"BUY Order is filled: {this.TradeToString(trade)}");
@@ -815,7 +815,7 @@ namespace MachinaTrader.TradeManagers
                         trade.IsSelling = false;
                         trade.CloseDate = exchangeOrder.OrderDate;
                         trade.CloseRate = exchangeOrder.Price;
-                        trade.Quantity = exchangeOrder.ExecutedQuantity;
+                        trade.Quantity = exchangeOrder.ExecutedQuantity.Value;
                         trade.CloseProfit = (exchangeOrder.Price * exchangeOrder.ExecutedQuantity) - trade.StakeAmount;
                         trade.CloseProfitPercentage = ((exchangeOrder.Price * exchangeOrder.ExecutedQuantity) - trade.StakeAmount) / trade.StakeAmount * 100;
 

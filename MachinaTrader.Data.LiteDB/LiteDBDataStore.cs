@@ -11,13 +11,13 @@ namespace MachinaTrader.Data.LiteDB
     public class LiteDbDataStore : IDataStore
     {
         private readonly LiteDatabase _database;
-        private readonly LiteCollection<TraderAdapter> _traderAdapter;
-        private readonly LiteCollection<TradeAdapter> _ordersAdapter;
-        private readonly LiteCollection<WalletTransactionAdapter> _walletTransactionsAdapter;
+        private readonly ILiteCollection<TraderAdapter> _traderAdapter;
+        private readonly ILiteCollection<TradeAdapter> _ordersAdapter;
+        private readonly ILiteCollection<WalletTransactionAdapter> _walletTransactionsAdapter;
 
         public LiteDbDataStore(LiteDbOptions options)
         {
-            var conn = new ConnectionString { Filename = options.LiteDbName, Mode = FileMode.Exclusive };
+            var conn = new ConnectionString { Filename = options.LiteDbName };
             _database = new LiteDatabase(conn);
             _ordersAdapter = _database.GetCollection<TradeAdapter>("Orders");
             _traderAdapter = _database.GetCollection<TraderAdapter>("Traders");

@@ -35,10 +35,10 @@ namespace MachinaTrader.Exchanges
             //get markets of exchange by base currency
             var listOfMakert = new List<string>();
 
-            var exchangeCoins = this.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == Global.Configuration.TradeOptions.QuoteCurrency);
+            var exchangeCoins = this.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == Global.Configuration.TradeOptions.QuoteCurrency);
             foreach (var item in exchangeCoins)
             {
-                listOfMakert.Add(this.ExchangeSymbolToGlobalSymbol(item.MarketName));
+                listOfMakert.Add(await this.ExchangeMarketSymbolToGlobalMarketSymbolAsync(item.MarketSymbol));
             }
 
             var currentDate = Global.Configuration.ExchangeOptions.FirstOrDefault().SimulationCurrentDate;
@@ -86,8 +86,8 @@ namespace MachinaTrader.Exchanges
                     marketCandle.OpenPrice = item.Open.ConvertInvariant<decimal>();
                     marketCandle.PeriodSeconds = periodSeconds;
                     marketCandle.Timestamp = item.Timestamp;
-                    marketCandle.BaseVolume = item.Volume.ConvertInvariant<double>();
-                    marketCandle.ConvertedVolume = (item.Volume * item.Close).ConvertInvariant<double>();
+                    marketCandle.BaseCurrencyVolume = item.Volume.ConvertInvariant<double>();
+                    marketCandle.BaseCurrencyVolume = (item.Volume * item.Close).ConvertInvariant<double>();
                     marketCandle.WeightedAverage = 0m;
 
                     candles.Add(marketCandle);
@@ -140,18 +140,20 @@ namespace MachinaTrader.Exchanges
             return candles;
         }
 
-        protected override async Task<IEnumerable<ExchangeMarket>> OnGetSymbolsMetadataAsync()
+        protected override async Task<IEnumerable<ExchangeMarket>> OnGetMarketSymbolsMetadataAsync()
         {
-            var markets = Global.AppCache.GetOrAdd(_realApi.Name, async (a) => await _realApi.GetSymbolsMetadataAsync());
-            if (markets.Result.Count() == 0)
+            var markets = Global.AppCache.GetOrAdd(_realApi.Name, async (a) =>
+                await _realApi.GetMarketSymbolsMetadataAsync());
+
+            if (!markets.Result.Any())
                 throw new Exception();
 
-            return markets.Result;
+            return await markets;
         }
 
-        protected override async Task<IEnumerable<string>> OnGetSymbolsAsync()
+        protected override async Task<IEnumerable<string>> OnGetMarketSymbolsAsync()
         {
-            return (await GetSymbolsMetadataAsync()).Select(market => market.MarketName);
+            return (await GetMarketSymbolsMetadataAsync()).Select(market => market.MarketSymbol);
         }
 
 
@@ -177,10 +179,10 @@ namespace MachinaTrader.Exchanges
                 Bid = lastCandle.Close,
                 Volume = new ExchangeVolume()
                 {
-                    BaseSymbol = symbol,
-                    BaseVolume = lastCandle.Volume,
-                    ConvertedSymbol = symbol,
-                    ConvertedVolume = lastCandle.Volume * lastCandle.Close,
+                    BaseCurrency = symbol,
+                    BaseCurrencyVolume = lastCandle.Volume,
+                    QuoteCurrency = symbol,
+                    QuoteCurrencyVolume = lastCandle.Volume * lastCandle.Close,
                     Timestamp = lastCandle.Timestamp
                 }
             };
@@ -188,49 +190,48 @@ namespace MachinaTrader.Exchanges
             return ticker;
         }
 
-        public override string ExchangeSymbolToGlobalSymbol(string symbol)
+        public override async Task<string> ExchangeMarketSymbolToGlobalMarketSymbolAsync(string symbol)
         {
             if (_realApi is ExchangeBinanceAPI)
             {
                 var crypto = symbol.Replace(Global.Configuration.TradeOptions.QuoteCurrency, "");
-                return Global.Configuration.TradeOptions.QuoteCurrency + "-" + crypto;
+                return await Task.Run(() => Global.Configuration.TradeOptions.QuoteCurrency + "-" + crypto);
             }
 
             string[] pieces = symbol.Split('-');
-            return pieces.First() + pieces.Last();
+            return pieces[0] + pieces.Last();
         }
 
-        public override string GlobalSymbolToExchangeSymbol(string symbol)
+        public override async Task<string> GlobalMarketSymbolToExchangeMarketSymbolAsync(string symbol)
         {
             if (_realApi is ExchangeBinanceAPI)
             {
                 string[] pieces2 = symbol.Split('-');
-                return pieces2.Last() + pieces2.First();
+                return await Task.Run(() => pieces2.Last() + pieces2[0]);
             }
 
             return symbol;
         }
 
-
-        protected override async Task<ExchangeOrderResult> OnGetOrderDetailsAsync(string orderId, string symbol = null)
+        protected override async Task<ExchangeOrderResult> OnGetOrderDetailsAsync(string orderId, string? marketSymbol = null, bool isClientOrderId = false)
         {
-            return _orders.FirstOrDefault(o => o.OrderId == orderId);
+            return await Task.Run(() => _orders.Find(o => o.OrderId == orderId));
         }
 
         protected override async Task OnCancelOrderAsync(string orderId, string symbol = null)
         {
-            _orders.RemoveAll(o => o.OrderId == orderId);
+            await Task.Run(() => _orders.RemoveAll(o => o.OrderId == orderId));
         }
 
         protected override async Task<ExchangeOrderResult> OnPlaceOrderAsync(ExchangeOrderRequest order)
         {
             if (order.IsBuy)
             {
-                _wallet.Add(DateTime.UtcNow, -(order.Price * order.Amount));
+                _wallet.Add(DateTime.UtcNow, -(order.Price.Value * order.Amount));
             }
             else
             {
-                _wallet.Add(DateTime.UtcNow, order.Price * order.Amount);
+                _wallet.Add(DateTime.UtcNow, order.Price.Value * order.Amount);
             }
 
             var orderResult = new ExchangeOrderResult()
@@ -243,7 +244,7 @@ namespace MachinaTrader.Exchanges
                 Price = order.Price,
                 AveragePrice = order.Price,
                 OrderDate = DateTime.UtcNow,
-                Symbol = order.Symbol,
+                MarketSymbol = order.MarketSymbol,
                 IsBuy = order.IsBuy,
                 Fees = 0m,
                 FeesCurrency = ""

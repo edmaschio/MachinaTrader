@@ -1,4 +1,4 @@
-﻿using AspNetCore.Identity.LiteDB.Data;
+using AspNetCore.Identity.LiteDB.Data;
 using LiteDB;
 using Microsoft.AspNetCore.Identity;
 using System;
@@ -11,8 +11,8 @@ namespace AspNetCore.Identity.LiteDB
     public class LiteDbRoleStore<TRole> : IRoleStore<TRole>, IQueryableRoleStore<TRole>
         where TRole : IdentityRole, new()
     {
-        private readonly LiteCollection<TRole> _roles;
-        private readonly LiteCollection<CancellationToken> _cancellationTokens;
+        private readonly ILiteCollection<TRole> _roles;
+        private readonly ILiteCollection<CancellationToken> _cancellationTokens;
 
         public LiteDbRoleStore(ILiteDbContext dbContext)
         {

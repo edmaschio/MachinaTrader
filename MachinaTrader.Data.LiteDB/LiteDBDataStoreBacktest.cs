@@ -19,7 +19,7 @@ namespace MachinaTrader.Data.LiteDB
 
         public LiteDbDataStoreBacktest(LiteDbOptions options)
         {
-            var conn = new ConnectionString { Filename = options.LiteDbName, Mode = LDB.FileMode.Exclusive };
+            var conn = new ConnectionString { Filename = options.LiteDbName };
             _database = new LiteDatabase(conn);
             GetDatabase(new BacktestOptions());
         }
@@ -64,7 +64,7 @@ namespace MachinaTrader.Data.LiteDB
                 return DatabaseInstances[databasePath];
             }
 
-            public LiteCollection<T> GetTable<T>(string collectionName = null) where T : new()
+            public ILiteCollection<T> GetTable<T>(string collectionName = null) where T : new()
             {
                 if (collectionName == null)
                 {
@@ -82,7 +82,7 @@ namespace MachinaTrader.Data.LiteDB
         {
             try
             {
-                LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+                ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
                 candleCollection.EnsureIndex("Timestamp");
                 List<CandleAdapter> candles = candleCollection.Find(Query.Between("Timestamp", backtestOptions.StartDate, backtestOptions.EndDate), Query.Ascending).ToList();
                 var items = Mapping.Mapper.Map<List<Candle>>(candles);
@@ -97,7 +97,7 @@ namespace MachinaTrader.Data.LiteDB
 
         public async Task<Candle> GetBacktestFirstCandle(BacktestOptions backtestOptions)
         {
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
             candleCollection.EnsureIndex("Timestamp");
             CandleAdapter lastCandle = candleCollection.Find(Query.All("Timestamp"), limit: 1).FirstOrDefault();
             var items = Mapping.Mapper.Map<Candle>(lastCandle);
@@ -106,7 +106,7 @@ namespace MachinaTrader.Data.LiteDB
 
         public async Task<Candle> GetBacktestLastCandle(BacktestOptions backtestOptions)
         {
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
             candleCollection.EnsureIndex("Timestamp");
             CandleAdapter lastCandle = candleCollection.Find(Query.All("Timestamp", Query.Descending), limit: 1).FirstOrDefault();
             var items = Mapping.Mapper.Map<Candle>(lastCandle);
@@ -116,7 +116,7 @@ namespace MachinaTrader.Data.LiteDB
         public async Task SaveBacktestCandlesBulk(List<Candle> candles, BacktestOptions backtestOptions)
         {
             var items = Mapping.Mapper.Map<List<CandleAdapter>>(candles);
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
             candleCollection.EnsureIndex("Timestamp");
             candleCollection.InsertBulk(items);
         }
@@ -124,7 +124,7 @@ namespace MachinaTrader.Data.LiteDB
         public async Task SaveBacktestCandlesBulkCheckExisting(List<Candle> candles, BacktestOptions backtestOptions)
         {
             var items = Mapping.Mapper.Map<List<CandleAdapter>>(candles);
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod); foreach (var item in items)
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod); foreach (var item in items)
             {
                 var checkData = candleCollection.FindOne(x => x.Timestamp == item.Timestamp);
                 if (checkData == null)
@@ -137,7 +137,7 @@ namespace MachinaTrader.Data.LiteDB
         public async Task SaveBacktestCandle(Candle candle, BacktestOptions backtestOptions)
         {
             var item = Mapping.Mapper.Map<CandleAdapter>(candle);
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
             candleCollection.EnsureIndex("Timestamp");
             var newCandle = candleCollection.FindOne(x => x.Timestamp == item.Timestamp);
             if (newCandle == null)
@@ -154,9 +154,9 @@ namespace MachinaTrader.Data.LiteDB
 
         public async Task DeleteBacktestCandles(BacktestOptions backtestOptions)
         {
-            LiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
+            ILiteCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<CandleAdapter>("Candle_" + backtestOptions.CandlePeriod);
             candleCollection.EnsureIndex("Timestamp");
-            candleCollection.Delete(Query.Between("Timestamp", backtestOptions.StartDate, backtestOptions.EndDate, true, true));
+            candleCollection.DeleteMany(Query.Between("Timestamp", backtestOptions.StartDate, backtestOptions.EndDate));
         }
 
         public async Task DeleteBacktestDatabase(BacktestOptions backtestOptions)
@@ -171,11 +171,11 @@ namespace MachinaTrader.Data.LiteDB
         {
             var items = Mapping.Mapper.Map<List<TradeSignalAdapter>>(signals);
 
-            LiteCollection<TradeSignalAdapter> itemCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<TradeSignalAdapter>("Signals_" + backtestOptions.CandlePeriod);
+            ILiteCollection<TradeSignalAdapter> itemCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<TradeSignalAdapter>("Signals_" + backtestOptions.CandlePeriod);
 
             foreach (var item in items)
             {
-                itemCollection.Delete(i => i.StrategyName == item.StrategyName);
+                itemCollection.DeleteMany(i => i.StrategyName == item.StrategyName);
             }
 
             // TradeSignalAdapter lastCandle = itemCollection.Find(Query.All("Timestamp", Query.Descending), limit: 1).FirstOrDefault();
@@ -188,7 +188,7 @@ namespace MachinaTrader.Data.LiteDB
         {
             var itemCollection = DataStoreBacktest.GetInstance(GetDatabase(backtestOptions)).GetTable<TradeSignalAdapter>("Signals_" + backtestOptions.CandlePeriod);
             itemCollection.EnsureIndex("StrategyName");
-            var items = itemCollection.Find(Query.Where("StrategyName", s => s.AsString == strategy), Query.Descending).ToList();
+            var items = itemCollection.Find(Query.EQ("StrategyName", strategy), Query.Descending).ToList();
             var result = Mapping.Mapper.Map<List<TradeSignal>>(items);
             return result;
         }

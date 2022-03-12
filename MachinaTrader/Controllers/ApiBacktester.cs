@@ -46,11 +46,11 @@ namespace MachinaTrader.Controllers
 
             if (String.IsNullOrEmpty(coinsToBuy))
             {
-                IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-                var exchangeCoins = api.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
+                IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
+                var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
                 foreach (var coin in exchangeCoins)
                 {
-                    coins.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                    coins.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
                 }
             }
             else
@@ -87,11 +87,11 @@ namespace MachinaTrader.Controllers
 
             if (String.IsNullOrEmpty(coinsToBuy))
             {
-                IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-                var exchangeCoins = api.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
+                IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
+                var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
                 foreach (var coin in exchangeCoins)
                 {
-                    coins.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                    coins.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
                 }
             }
             else
@@ -129,10 +129,10 @@ namespace MachinaTrader.Controllers
             if (String.IsNullOrEmpty(coinsToBuy))
             {
                 IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-                var exchangeCoins = api.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
+                var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
                 foreach (var coin in exchangeCoins)
                 {
-                    coins.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                    coins.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
                 }
             }
             else
@@ -189,24 +189,24 @@ namespace MachinaTrader.Controllers
 
         [HttpGet]
         [Route("exchangePairs")]
-        public ActionResult ExchangePairs(string exchange, string baseCurrency)
+        public async Task<ActionResult> ExchangePairs(string exchange, string baseCurrency)
         {
             var symbols = new List<string>();
 
-            IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-            IEnumerable<ExchangeMarket> exchangeCoins = api.GetSymbolsMetadataAsync().Result;
+            IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
+            IEnumerable<ExchangeMarket> exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result;
 
             if (!String.IsNullOrEmpty(baseCurrency))
             {
                 exchangeCoins = exchangeCoins.Where(e => string.Equals(e.BaseCurrency, baseCurrency, StringComparison.InvariantCultureIgnoreCase));
             }
 
-            foreach (var coin in exchangeCoins.OrderBy(x => x.MarketName))
+            foreach (var coin in exchangeCoins.OrderBy(x => x.MarketSymbol))
             {
-                symbols.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                symbols.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
             }
 
-            IEnumerable<string> exchangeBaseCurrencies = api.GetSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
+            IEnumerable<string> exchangeBaseCurrencies = api.GetMarketSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
 
             return Ok(new
             {
@@ -217,18 +217,18 @@ namespace MachinaTrader.Controllers
 
         [HttpGet]
         [Route("backtesterResults")]
-        public ActionResult BacktesterResults(string exchange, string coinsToBuy, string baseCurrency, bool saveSignals, decimal startingWallet, decimal tradeAmount, DateTime? from = null, DateTime? to = null, string candleSize = "5", string strategy = "all")
+        public async Task<ActionResult> BacktesterResults(string exchange, string coinsToBuy, string baseCurrency, bool saveSignals, decimal startingWallet, decimal tradeAmount, DateTime? from = null, DateTime? to = null, string candleSize = "5", string strategy = "all")
         {
             var strategies = new JObject();
 
             var coins = new List<string>();
             if (String.IsNullOrEmpty(coinsToBuy))
             {
-                IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-                var exchangeCoins = api.GetSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
+                IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
+                var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
                 foreach (var coin in exchangeCoins)
                 {
-                    coins.Add(api.ExchangeSymbolToGlobalSymbol(coin.MarketName));
+                    coins.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
                 }
             }
             else
