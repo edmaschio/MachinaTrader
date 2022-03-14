@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
 using LazyCache;
 using MachinaTrader.Globals.Hubs;
@@ -9,16 +8,11 @@ using MachinaTrader.Globals.Structure.Enums;
 using MachinaTrader.Globals.Structure.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
-using Serilog;
-using Serilog.Sinks.SystemConsole.Themes;
 using LogLevel = Quartz.Logging.LogLevel;
 
 namespace MachinaTrader.Globals
@@ -124,8 +118,8 @@ namespace MachinaTrader.Globals
         public static string DataPath = "";
         public static bool WebServerReady = false;
 
-        public static JObject CoreConfig = new JObject();
-        public static JObject CoreRuntime = new JObject();
+        public static JObject CoreConfig = new();
+        public static JObject CoreRuntime = new();
 
         public static IDataStore DataStore { get; set; }
         public static IDataStoreBacktest DataStoreBacktest { get; set; }
@@ -134,7 +128,7 @@ namespace MachinaTrader.Globals
         public static IScheduler QuartzTimer = new StdSchedulerFactory().GetScheduler().Result;
         public static string DatabaseConnectionString { get; set; }
 
-        public static RuntimeConfig RuntimeSettings = new RuntimeConfig();
+        public static RuntimeConfig RuntimeSettings = new();
         public static List<INotificationManager> NotificationManagers;
         public static OrderBehavior GlobalOrderBehavior;
         public static IApplicationBuilder ApplicationBuilder { get; set; }

@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MachinaTrader.Helpers;
 using MachinaTrader.Hubs;
 using Quartz;
-using Quartz.Impl;
 using MachinaTrader.Globals.Structure.Enums;
 using MachinaTrader.Globals.Structure.Interfaces;
 using MachinaTrader.Globals.Structure.Models;
@@ -32,17 +31,17 @@ namespace MachinaTrader
         public static IHubContext<HubBacktest> GlobalHubBacktest;
         public static IHubContext<HubExchangeAccounts> GlobalHubAccounts;
         public static TelegramNotificationOptions GlobalTelegramNotificationOptions { get; set; }
-        
-        public static ConcurrentDictionary<string, Ticker> WebSocketTickers = new ConcurrentDictionary<string, Ticker>();
 
-        public static List<string> GlobalCurrencys = new List<string>();
-        public static List<string> ExchangeCurrencys = new List<string>();
+        public static ConcurrentDictionary<string, Ticker> WebSocketTickers = new();
+
+        public static List<string> GlobalCurrencys = new();
+        public static List<string> ExchangeCurrencys = new();
     }
 
     /// <summary>
     /// Global Settings
     /// </summary>
-    public class RuntimeSettings
+    public static class RuntimeSettings
     {
         public async static void Init()
         {
@@ -57,16 +56,20 @@ namespace MachinaTrader
             if (Global.Configuration.SystemOptions.Database == "MongoDB")
             {
                 Global.Logger.Information("Database set to MongoDB");
-                MongoDbOptions databaseOptions = new MongoDbOptions();
-                databaseOptions.MongoUrl = Global.DatabaseConnectionString;
+                MongoDbOptions databaseOptions = new()
+                {
+                    MongoUrl = Global.DatabaseConnectionString
+                };
                 Global.DataStore = new MongoDbDataStore(databaseOptions);
 
                 // Check DB connection
                 MongoDbCheck(databaseOptions, databaseOptions.MongoDatabaseName);
 
                 // Backtest MongoDB
-                MongoDbOptions backtestDatabaseOptions = new MongoDbOptions();
-                backtestDatabaseOptions.MongoUrl = Global.DatabaseConnectionString;
+                MongoDbOptions backtestDatabaseOptions = new()
+                {
+                    MongoUrl = Global.DatabaseConnectionString
+                };
                 Global.DataStoreBacktest = new MongoDbDataStoreBacktest(backtestDatabaseOptions);
             }
             else
