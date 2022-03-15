@@ -83,7 +83,7 @@ namespace MachinaTrader.Controllers
         [Route("refreshCandles")]
         public async Task<ActionResult> RefreshCandles(string exchange, string coinsToBuy, string baseCurrency, string candleSize = "5")
         {
-            List<string> coins = new List<string>();
+            List<string> coins = new();
 
             if (String.IsNullOrEmpty(coinsToBuy))
             {
@@ -96,7 +96,7 @@ namespace MachinaTrader.Controllers
             }
             else
             {
-                Char delimiter = ',';
+                char delimiter = ',';
                 String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
                 foreach (var coin in coinsToBuyArray)
                 {
@@ -104,7 +104,7 @@ namespace MachinaTrader.Controllers
                 }
             }
 
-            BacktestOptions backtestOptions = new BacktestOptions
+            BacktestOptions backtestOptions = new()
             {
                 DataFolder = Global.DataPath,
                 Exchange = (Exchange)Enum.Parse(typeof(Exchange), exchange, true),
@@ -113,7 +113,7 @@ namespace MachinaTrader.Controllers
             };
 
             await DataRefresher.RefreshCandleData(x => Global.Logger.Information(x), backtestOptions, Global.DataStoreBacktest);
-            JObject result = new JObject
+            JObject result = new()
             {
                 ["result"] = "success"
             };
@@ -196,7 +196,7 @@ namespace MachinaTrader.Controllers
             IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
             IEnumerable<ExchangeMarket> exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result;
 
-            if (!String.IsNullOrEmpty(baseCurrency))
+            if (!string.IsNullOrEmpty(baseCurrency))
             {
                 exchangeCoins = exchangeCoins.Where(e => string.Equals(e.BaseCurrency, baseCurrency, StringComparison.InvariantCultureIgnoreCase));
             }
@@ -222,7 +222,7 @@ namespace MachinaTrader.Controllers
             var strategies = new JObject();
 
             var coins = new List<string>();
-            if (String.IsNullOrEmpty(coinsToBuy))
+            if (string.IsNullOrEmpty(coinsToBuy))
             {
                 IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
                 var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
@@ -233,12 +233,7 @@ namespace MachinaTrader.Controllers
             }
             else
             {
-                Char delimiter = ',';
-                String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-                foreach (var coin in coinsToBuyArray)
-                {
-                    coins.Add(coin.ToUpper());
-                }
+                coins = GetCoinsToBuyAsList(coinsToBuy);
             }
 
             var backtestOptions = new BacktestOptions
@@ -297,18 +292,11 @@ namespace MachinaTrader.Controllers
             return new JsonResult(strategies);
         }
 
-
         [HttpGet]
         [Route("getTickers")]
         public async Task<ActionResult> GetTickers(string exchange, string coinsToBuy, string strategy, string candleSize)
         {
-            List<string> coins = new List<string>();
-            Char delimiter = ',';
-            String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-            foreach (var coin in coinsToBuyArray)
-            {
-                coins.Add(coin.ToUpper());
-            }
+            List<string> coins = GetCoinsToBuyAsList(coinsToBuy);
 
             var backtestOptions = new BacktestOptions
             {
@@ -331,13 +319,7 @@ namespace MachinaTrader.Controllers
         {
             var strategyName = WebUtility.HtmlDecode(strategy);
 
-            List<string> coins = new List<string>();
-            Char delimiter = ',';
-            String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-            foreach (var coin in coinsToBuyArray)
-            {
-                coins.Add(coin.ToUpper());
-            }
+            List<string> coins = GetCoinsToBuyAsList(coinsToBuy);
 
             var backtestOptions = new BacktestOptions
             {
@@ -354,5 +336,12 @@ namespace MachinaTrader.Controllers
             return new JsonResult(items);
         }
 
+        private static List<string> GetCoinsToBuyAsList(string coinsToBuy)
+        {
+            List<string> coins = new();
+            const char delimiter = ',';
+
+            return coinsToBuy.Split(delimiter).Select(c => c.ToUpper()).ToList();
+        }
     }
 }
