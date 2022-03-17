@@ -1,6 +1,7 @@
 using System;
 using AutoMapper;
 using MachinaTrader.Globals.Structure.Models;
+using MongoDB.Bson;
 
 namespace MachinaTrader.Data.MongoDB
 {
@@ -15,8 +16,9 @@ namespace MachinaTrader.Data.MongoDB
                 cfg.AddProfile<MappingProfile>();
             });
 
-            var mapper = config.CreateMapper();
-            return mapper;
+            config.AssertConfigurationIsValid();
+
+            return config.CreateMapper();
         });
 
         public static IMapper Mapper => Lazy.Value;
@@ -26,20 +28,14 @@ namespace MachinaTrader.Data.MongoDB
     {
         public MappingProfile()
         {
-            CreateMap<TradeAdapter, Trade>();
-            CreateMap<Trade, TradeAdapter>();
+            CreateMap<Trade, TradeAdapter>().ReverseMap().ForMember(x => x.PaperTrading, x => x.Ignore());
 
-            CreateMap<TraderAdapter, Trader>();
-            CreateMap<Trader, TraderAdapter>();
+            CreateMap<CandleAdapter, Candle>().ReverseMap();
 
-            CreateMap<CandleAdapter, Candle>();
-            CreateMap<Candle, CandleAdapter>();
+            CreateMap<TradeSignal, TradeSignalAdapter>().ReverseMap();
+            //CreateMap<TradeSignalAdapter, TradeSignal>();
 
-            CreateMap<TradeSignal, TradeSignalAdapter>();
-            CreateMap<TradeSignalAdapter, TradeSignal>();
-
-            CreateMap<WalletTransaction, WalletTransactionAdapter>();
-            CreateMap<WalletTransactionAdapter, WalletTransaction>();
+            CreateMap<WalletTransaction, WalletTransactionAdapter>().ReverseMap();
         }
     }
 }

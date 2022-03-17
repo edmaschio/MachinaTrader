@@ -97,7 +97,7 @@ namespace MachinaTrader.Data.MongoDB
 
         public async Task SaveBacktestCandlesBulk(List<Candle> candles, BacktestOptions backtestOptions)
         {
-            var items = Mapping.Mapper.Map<List<CandleAdapter>>(candles);
+            List<CandleAdapter> items = Mapping.Mapper.Map<List<Candle>, List<CandleAdapter>>(candles);
             IMongoCollection<CandleAdapter> candleCollection = DataStoreBacktest.GetInstance(MongoDbBaseName + backtestOptions.CandlePeriod).GetTable<CandleAdapter>(backtestOptions.Exchange + "_" + backtestOptions.Coin);
             await candleCollection.InsertManyAsync(items);
         }

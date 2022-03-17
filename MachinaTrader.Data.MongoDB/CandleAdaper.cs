@@ -9,7 +9,7 @@ namespace MachinaTrader.Data.MongoDB
     {
         [BsonId]
         [BsonIgnoreIfDefault]
-        public ObjectId Id { get; set; }
+        public Guid Id { get; set; }
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime Timestamp { get; set; }
         public decimal High { get; set; }

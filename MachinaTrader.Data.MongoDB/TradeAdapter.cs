@@ -1,7 +1,6 @@
 using System;
 using MachinaTrader.Globals.Structure.Enums;
 using MachinaTrader.Globals.Structure.Models;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace MachinaTrader.Data.MongoDB
@@ -10,7 +9,7 @@ namespace MachinaTrader.Data.MongoDB
     {
         [BsonId]
         [BsonIgnoreIfDefault]
-        public ObjectId Id { get; set; }
+        public Guid Id { get; set; }
         public string TradeId { get; set; }
         public string TraderId { get; set; }
         public string Market { get; set; }

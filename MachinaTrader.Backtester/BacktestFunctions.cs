@@ -10,7 +10,7 @@ using MachinaTrader.Strategies;
 
 namespace MachinaTrader.Backtester
 {
-    public class BacktestFunctions
+    public static class BacktestFunctions
     {
         public static List<ITradingStrategy> GetTradingStrategies()
         {

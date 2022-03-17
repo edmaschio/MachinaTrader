@@ -6,7 +6,7 @@ namespace MachinaTrader.Globals.Structure.Models
     public class Trade
     {
         // Used as primary key for the different data storage mechanisms.
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         public string TradeId { get; set; }
         public string TraderId { get; set; }

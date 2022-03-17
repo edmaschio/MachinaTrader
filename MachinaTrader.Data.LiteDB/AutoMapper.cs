@@ -6,7 +6,7 @@ namespace MachinaTrader.Data.LiteDB
 {
     public static class Mapping
     {
-        private static readonly Lazy<IMapper> Lazy = new Lazy<IMapper>(() =>
+        private static readonly Lazy<IMapper> Lazy = new(() =>
         {
             var config = new MapperConfiguration(cfg =>
             {
@@ -32,8 +32,7 @@ namespace MachinaTrader.Data.LiteDB
             CreateMap<TraderAdapter, Trader>();
             CreateMap<Trader, TraderAdapter>();
 
-            CreateMap<CandleAdapter, Candle>();
-            CreateMap<Candle, CandleAdapter>();
+            CreateMap<CandleAdapter, Candle>().ReverseMap();
 
             CreateMap<TradeSignal, TradeSignalAdapter>();
             CreateMap<TradeSignalAdapter, TradeSignal>();

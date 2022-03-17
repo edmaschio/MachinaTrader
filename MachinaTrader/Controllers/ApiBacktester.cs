@@ -47,7 +47,7 @@ namespace MachinaTrader.Controllers
             if (String.IsNullOrEmpty(coinsToBuy))
             {
                 IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
-                var exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result.Where(m => m.BaseCurrency == baseCurrency);
+                var exchangeCoins = (await api.GetMarketSymbolsMetadataAsync()).Where(m => m.BaseCurrency == baseCurrency);
                 foreach (var coin in exchangeCoins)
                 {
                     coins.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
@@ -55,12 +55,7 @@ namespace MachinaTrader.Controllers
             }
             else
             {
-                Char delimiter = ',';
-                String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-                foreach (var coin in coinsToBuyArray)
-                {
-                    coins.Add(coin.ToUpper());
-                }
+                coins = GetCoinsToBuyAsList(coinsToBuy);
             }
 
             var backtestOptions = new BacktestOptions
@@ -96,12 +91,7 @@ namespace MachinaTrader.Controllers
             }
             else
             {
-                char delimiter = ',';
-                String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-                foreach (var coin in coinsToBuyArray)
-                {
-                    coins.Add(coin.ToUpper());
-                }
+                coins = GetCoinsToBuyAsList(coinsToBuy);
             }
 
             BacktestOptions backtestOptions = new()
@@ -137,12 +127,7 @@ namespace MachinaTrader.Controllers
             }
             else
             {
-                Char delimiter = ',';
-                String[] coinsToBuyArray = coinsToBuy.Split(delimiter);
-                foreach (var coin in coinsToBuyArray)
-                {
-                    coins.Add(coin.ToUpper());
-                }
+                coins = GetCoinsToBuyAsList(coinsToBuy);
             }
 
             var backtestOptions = new BacktestOptions
@@ -194,11 +179,12 @@ namespace MachinaTrader.Controllers
             var symbols = new List<string>();
 
             IExchangeAPI api = await ExchangeAPI.GetExchangeAPIAsync(exchange);
-            IEnumerable<ExchangeMarket> exchangeCoins = api.GetMarketSymbolsMetadataAsync().Result;
+            IEnumerable<ExchangeMarket> exchangeCoinsBase = await api.GetMarketSymbolsMetadataAsync();
+            var exchangeCoins = exchangeCoinsBase;
 
             if (!string.IsNullOrEmpty(baseCurrency))
             {
-                exchangeCoins = exchangeCoins.Where(e => string.Equals(e.BaseCurrency, baseCurrency, StringComparison.InvariantCultureIgnoreCase));
+                exchangeCoins = exchangeCoins.Where(e => string.Equals(e.QuoteCurrency, baseCurrency, StringComparison.InvariantCultureIgnoreCase));
             }
 
             foreach (var coin in exchangeCoins.OrderBy(x => x.MarketSymbol))
@@ -206,7 +192,7 @@ namespace MachinaTrader.Controllers
                 symbols.Add(await api.ExchangeMarketSymbolToGlobalMarketSymbolAsync(coin.MarketSymbol));
             }
 
-            IEnumerable<string> exchangeBaseCurrencies = api.GetMarketSymbolsMetadataAsync().Result.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
+            IEnumerable<string> exchangeBaseCurrencies = exchangeCoinsBase.Select(m => m.BaseCurrency).Distinct().OrderBy(x => x);
 
             return Ok(new
             {
@@ -276,7 +262,7 @@ namespace MachinaTrader.Controllers
                     }
                 }
                 var result = await BacktestFunctions.BackTestJson(tradingStrategy, backtestOptions, Global.DataStoreBacktest, baseCurrency, saveSignals, startingWallet, tradeAmount);
-                for (int i = 0; i < result.Count(); i++)
+                for (int i = 0; i < result.Count; i++)
                 {
                     if (i == 0)
                     {
