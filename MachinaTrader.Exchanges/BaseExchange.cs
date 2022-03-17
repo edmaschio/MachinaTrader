@@ -20,10 +20,14 @@ namespace MachinaTrader.Exchanges
         public BaseExchange BaseExchange(string exchange)
         {
             IExchangeAPI api = ExchangeAPI.GetExchangeAPI(exchange);
-            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: true);
+
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true);
+
             IConfiguration configuration = builder.Build();
 
-            ExchangeOptions exchangeOptions = new ExchangeOptions();
+            ExchangeOptions exchangeOptions = new();
             exchangeOptions.Exchange = (Exchange)Enum.Parse(typeof(Exchange), exchange, true);
 
             string apiKey;
@@ -123,7 +127,7 @@ namespace MachinaTrader.Exchanges
             }
             catch (Exception ex)
             {
-                Global.Logger.Error(ex, $"Error on PlaceOrderAsync");
+                Global.Logger.Error(ex, "Error on PlaceOrderAsync");
             }
 
             return null;
@@ -157,7 +161,7 @@ namespace MachinaTrader.Exchanges
                 //Global.Logger.Information($"Starting GetMarketSummaries _api.GetTickersAsync()");
                 //var watch1 = System.Diagnostics.Stopwatch.StartNew();
 
-                var summaries = _api.GetTickersAsync().Result;
+                var summaries = await _api.GetTickersAsync();
 
                 //watch1.Stop();
                 //Global.Logger.Warning($"Ended GetMarketSummaries _api.GetTickersAsync() in #{watch1.Elapsed.TotalSeconds} seconds");
@@ -213,7 +217,7 @@ namespace MachinaTrader.Exchanges
         {
             var orders = await _api.GetOpenOrderDetailsAsync(market);
 
-            if (orders.Count() > 0)
+            if (orders.Any())
             {
                 return orders.Select(x => new OpenOrder
                 {
@@ -301,7 +305,7 @@ namespace MachinaTrader.Exchanges
             if (Global.Configuration.ExchangeOptions.FirstOrDefault().IsSimulation)
                 k = 9;
 
-            while (tickers.Count() <= 0 && k < 10)
+            while (!tickers.Any() && k < 10)
             {
                 k++;
                 try
@@ -357,7 +361,7 @@ namespace MachinaTrader.Exchanges
 
             int k = 1;
 
-            while (ticker.Count() <= 0 && k < 20)
+            while (!ticker.Any() && k < 20)
             {
                 k++;
                 try
@@ -436,7 +440,7 @@ namespace MachinaTrader.Exchanges
                 cendDate = cendDate.Value.AddHours(hh);
             }
 
-            if (totaltickers.Any())
+            if (totaltickers.Count > 0)
             {
                 var totalCandles = totaltickers.Select(x => new Candle
                 {

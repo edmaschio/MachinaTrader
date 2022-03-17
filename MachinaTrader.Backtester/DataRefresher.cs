@@ -12,18 +12,14 @@ using Newtonsoft.Json.Linq;
 
 namespace MachinaTrader.Backtester
 {
-    public class DataRefresher
+    public static class DataRefresher
     {
-        public static Dictionary<string, BacktestOptions> CurrentlyRunningUpdates = new Dictionary<string, BacktestOptions>();
+        public static Dictionary<string, BacktestOptions> CurrentlyRunningUpdates = new();
 
         public static async Task<bool> CheckForCandleData(BacktestOptions backtestOptions, IDataStoreBacktest dataStore)
         {
             List<string> allDatabases = await dataStore.GetBacktestAllDatabases(backtestOptions);
-            if (allDatabases.Count == 0)
-            {
-                return false;
-            }
-            return true;
+            return allDatabases.Count != 0;
         }
 
         public static async Task RefreshCandleData(Action<string> callback, BacktestOptions backtestOptions, IDataStoreBacktest dataStore)
@@ -45,7 +41,7 @@ namespace MachinaTrader.Backtester
                 {
                     if (CurrentlyRunningUpdates.ContainsKey(currentlyRunningString))
                     {
-                        callback($"\tUpdate still in process:  {backtestOptions.Exchange.ToString()} with Period {backtestOptions.CandlePeriod.ToString()}min for {globalSymbol} from {backtestOptions.StartDate} UTC to {DateTime.UtcNow.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
+                        callback($"\tUpdate still in process:  {backtestOptions.Exchange} with Period {backtestOptions.CandlePeriod}min for {globalSymbol} from {backtestOptions.StartDate} UTC to {DateTime.UtcNow.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
                         return;
                     }
                     CurrentlyRunningUpdates[currentlyRunningString] = backtestOptions;
@@ -59,7 +55,7 @@ namespace MachinaTrader.Backtester
                 if (!backtestOptions.UpdateCandles)
                 {
                     dataStore.DeleteBacktestDatabase(backtestOptions).RunSynchronously();
-                    callback($"\tRecreate database: {backtestOptions.Exchange.ToString()} with Period {backtestOptions.CandlePeriod.ToString()}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
+                    callback($"\tRecreate database: {backtestOptions.Exchange} with Period {backtestOptions.CandlePeriod}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
                 }
                 else
                 {
@@ -68,11 +64,11 @@ namespace MachinaTrader.Backtester
                     if (databaseLastCandle != null)
                     {
                         startDate = databaseLastCandle.Timestamp.ToUniversalTime();
-                        callback($"\tUpdate database: {backtestOptions.Exchange.ToString()} with Period {backtestOptions.CandlePeriod.ToString()}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
+                        callback($"\tUpdate database: {backtestOptions.Exchange} with Period {backtestOptions.CandlePeriod}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
                     }
                     else
                     {
-                        callback($"\tCreate database: {backtestOptions.Exchange.ToString()} with Period {backtestOptions.CandlePeriod.ToString()}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
+                        callback($"\tCreate database: {backtestOptions.Exchange} with Period {backtestOptions.CandlePeriod}min for {globalSymbol} {startDate.ToUniversalTime()} to {endDate.RoundDown(TimeSpan.FromMinutes(backtestOptions.CandlePeriod))} UTC");
                         databaseExists = false;
                     }
                 }

@@ -75,10 +75,10 @@ namespace MachinaTrader
             else
             {
                 Global.Logger.Information("Database set to LiteDB");
-                LiteDbOptions databaseOptions = new LiteDbOptions { LiteDbName = Global.DataPath + "/MachinaTrader.db" };
+                LiteDbOptions databaseOptions = new() { LiteDbName = Global.DataPath + "/MachinaTrader.db" };
                 Global.DataStore = new LiteDbDataStore(databaseOptions);
 
-                LiteDbOptions backtestDatabaseOptions = new LiteDbOptions { LiteDbName = Global.DataPath + "/MachinaTrader.db" };
+                LiteDbOptions backtestDatabaseOptions = new() { LiteDbName = Global.DataPath + "/MachinaTrader.db" };
                 Global.DataStoreBacktest = new LiteDbDataStoreBacktest(backtestDatabaseOptions);
             }
 
@@ -150,7 +150,7 @@ namespace MachinaTrader
             }
 
             //Websocket Test
-            var fullApi = Global.ExchangeApi.GetFullApi().Result;
+            var fullApi = await Global.ExchangeApi.GetFullApi();
 
             //Create Exchange Currencies as List
             foreach (var currency in Global.Configuration.TradeOptions.AlwaysTradeList)
