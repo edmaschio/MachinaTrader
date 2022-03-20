@@ -654,7 +654,7 @@
                 var options = {};
 
                 var connectionBacktester = new signalR.HubConnectionBuilder()
-                    //.configureLogging(signalR.LogLevel.Trace)
+                    .configureLogging(signalR.LogLevel.Information)
                     .withUrl(hubRoute, options)
                     .withHubProtocol(protocol)
                     .build();
@@ -662,6 +662,7 @@
                 var connectSignalr = function () {
                     connectionBacktester.start().then(function () {
                         addSignalrClient(hubRoute, connectionBacktester);
+                        console.log("connected");
                     }).catch(function () {
                     });
                 };
