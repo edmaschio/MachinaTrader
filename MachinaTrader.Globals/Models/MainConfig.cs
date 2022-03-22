@@ -5,17 +5,17 @@ namespace MachinaTrader.Globals.Models
 {
     public class MainConfig
     {
-        public SystemOptions SystemOptions = new SystemOptions();
-        public TradeOptions TradeOptions = new TradeOptions();
-        public TelegramNotificationOptions TelegramOptions = new TelegramNotificationOptions();
-        public List<ExchangeOptions> ExchangeOptions = new List<ExchangeOptions> { };
-        public DisplayOptions DisplayOptions = new DisplayOptions();
+        public SystemOptions SystemOptions = new();
+        public TradeOptions TradeOptions = new();
+        public TelegramNotificationOptions TelegramOptions = new();
+        public List<ExchangeOptions> ExchangeOptions = new() { };
+        public DisplayOptions DisplayOptions = new();
     }
 
     public class SystemOptions
     {
         public string Database { get; set; } = "MongoDB";
-        public MongoDbOptions MongoDbOptions = new MongoDbOptions();
+        public MongoDbOptions MongoDbOptions = new();
 
         // Frontend stuff
         public int WebPort { get; set; } = 5000;

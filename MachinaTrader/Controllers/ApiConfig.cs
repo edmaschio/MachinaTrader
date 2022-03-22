@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System;
 using MachinaTrader.Globals.Helpers;
-using MachinaTrader.Models;
 using MachinaTrader.Globals;
 using MachinaTrader.Globals.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,9 +13,10 @@ namespace MachinaTrader.Controllers
     {
         [HttpGet]
         [Route("mainConfig")]
-        public ActionResult GetMainConfig()
+        public IActionResult GetMainConfig()
         {
-            return new JsonResult(Global.Configuration);
+            var config = Global.Configuration;
+            return Ok(config);
         }
 
         [HttpPost]
