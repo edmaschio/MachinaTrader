@@ -15,7 +15,7 @@ namespace MachinaTrader.Globals.Models
     public class SystemOptions
     {
         public string Database { get; set; } = "MongoDB";
-        public MongoDbOptions MongoDbOptions = new();
+        public MongoDbOptions MongoDbOptions { get; set; } = new();
 
         // Frontend stuff
         public int WebPort { get; set; } = 5000;

@@ -58,9 +58,9 @@
                                 <option :selected="apiMainConfigData['systemOptions']['database'] == 'LiteDB'" value="LiteDB" data-icon="fal fa-database">&nbsp;&nbsp;LiteDB</option>
                             </select>
                         </td>
-                        
+
                     </tr>
-                    <tr>
+                    <!--<tr>
                         <td width="300px">
                             <span class="qTip" title="Theme for MachinaTrader">Theme <i class="fal fa-question-circle"></i></span>
                             <div style="display: none;">
@@ -73,13 +73,13 @@
                                 <option :selected="apiMainConfigData['systemOptions']['theme'] == 'dark'" value="dark" data-icon="fal fa-moon">&nbsp;&nbsp;Dark</option>
                             </select>
                         </td>
-                    </tr>
+                    </tr>-->
 
                 </table>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-12" id="databaseSettings">
         <div class="card">
             <div class="card-header">
@@ -374,7 +374,7 @@
                             <input type="text" class="form-control float" name="TradeOptions.MaxNumberOfConcurrentTrades" v-bind:value="apiMainConfigData['tradeOptions']['maxNumberOfConcurrentTrades']" />
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <td>
                             <span class="qTip" title="Start amount">Start Amount <i class="fal fa-question-circle"></i></span>
@@ -583,7 +583,7 @@
                             <input type="text" class="form-control float" name="TradeOptions.BuyInPricePercentage" v-bind:value="apiMainConfigData['tradeOptions']['buyInPricePercentage']" />
                         </td>
                     </tr>
-                    <!--<tr>
+                    <tr>
                         <td>
                             <span class="qTip" title="">ReturnOnInvestment <i class="fal fa-question-circle"></i></span>
                             <div style="display: none;">
@@ -593,7 +593,7 @@
                         <td>
                             <input type="text" class="form-control string" name="TradeOptions.ReturnOnInvestment" v-bind:value="apiMainConfigData['tradeOptions']['returnOnInvestment']" />
                         </td>
-                    </tr>-->
+                    </tr>
                     <tr>
                         <td>
                             <span class="qTip" title="QuoteCurrency">QuoteCurrency <i class="fal fa-question-circle"></i></span>

@@ -16,7 +16,16 @@ namespace MachinaTrader.Controllers
         public IActionResult GetMainConfig()
         {
             var config = Global.Configuration;
-            return Ok(config);
+
+            var configDto = new
+            {
+                config.SystemOptions,
+                config.DisplayOptions,
+                config.TelegramOptions,
+                config.TradeOptions
+            };
+
+            return Ok(configDto);
         }
 
         [HttpPost]
